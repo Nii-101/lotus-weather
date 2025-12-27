@@ -108,7 +108,7 @@ new LotusWeather(config: LotusWeatherConfig)
 Fetches current weather data for a specified city.
 
 ```typescript
-const weather = await sdk.getCurrentWeather("Paris");
+const current = await weather.getCurrentWeather("Paris");
 // { city: "Paris", temperature: 18, description: "Clear sky" }
 ```
 
@@ -117,7 +117,7 @@ const weather = await sdk.getCurrentWeather("Paris");
 Fetches current weather data for geographic coordinates.
 
 ```typescript
-const weather = await sdk.getWeatherByCoords({ lat: 51.5074, lon: -0.1278 });
+const data = await weather.getWeatherByCoords({ lat: 51.5074, lon: -0.1278 });
 // { city: "London", temperature: 15, description: "Overcast" }
 ```
 
@@ -126,7 +126,7 @@ const weather = await sdk.getWeatherByCoords({ lat: 51.5074, lon: -0.1278 });
 Fetches multi-day weather forecast for a city.
 
 ```typescript
-const forecast = await sdk.getForecast("Berlin", { days: 7 });
+const forecast = await weather.getForecast("Berlin", { days: 7 });
 // [{ date: "2025-01-15", minTemp: 2, maxTemp: 8, description: "Cloudy" }, ...]
 ```
 
@@ -135,7 +135,7 @@ const forecast = await sdk.getForecast("Berlin", { days: 7 });
 Clears all cached data. Only has effect if caching is enabled.
 
 ```typescript
-sdk.clearCache();
+weather.clearCache();
 ```
 
 ### Types
@@ -314,10 +314,10 @@ const weather = new LotusWeather({
 });
 
 // First call fetches from API
-const weather1 = await weather.getCurrentWeather("London");
+const result1 = await weather.getCurrentWeather("London");
 
 // Second call returns cached result
-const weather2 = await weather.getCurrentWeather("London");
+const result2 = await weather.getCurrentWeather("London");
 
 // Clear cache when needed
 weather.clearCache();
