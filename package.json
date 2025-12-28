@@ -2,6 +2,14 @@
   "name": "lotus-weather",
   "version": "0.1.2",
   "description": "LotusWeather - A lightweight TypeScript weather SDK supporting OpenWeather and Open-Meteo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nii-101/lotus-weather.git"
+  },
+  "homepage": "https://github.com/Nii-101/lotus-weather#readme",
+  "bugs": {
+    "url": "https://github.com/Nii-101/lotus-weather/issues"
+  },
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -14,10 +22,13 @@
   },
   "keywords": [
     "weather",
-    "weather-sdk",
-    "openweather",
+    "forecast",
+    "climate",
+    "openWeather",
     "open-meteo",
-    "typescript"
+    "typescript",
+    "frontend",
+    "sdk"
   ],
   "license": "MIT",
   "dependencies": {
