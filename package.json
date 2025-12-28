@@ -1,6 +1,6 @@
 {
   "name": "lotus-weather",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "LotusWeather - A lightweight TypeScript weather SDK supporting OpenWeather and Open-Meteo",
   "repository": {
     "type": "git",
