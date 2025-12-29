@@ -3,6 +3,9 @@ import {
   LotusWeatherConfig,
   WeatherProvider,
   CurrentWeather,
+  CurrentWeatherOptions,
+  CurrentWeatherUnits,
+  OpenMeteoCurrentWeatherRaw,
   Coordinates,
   ForecastDay,
   ForecastOptions,
@@ -229,10 +232,22 @@ export class LotusWeather {
   /**
    * Fetches current weather data for a city.
    * @param city - City name (e.g., "London", "Tokyo", "New York")
-   * @returns Promise resolving to weather data
+   * @param options - Optional settings (set raw: true for direct API response)
+   * @returns Promise resolving to weather data or raw API response
    * @throws WeatherError if the city is not found or the request fails
    */
-  async getCurrentWeather(city: string): Promise<CurrentWeather> {
+  async getCurrentWeather(
+    city: string,
+    options?: CurrentWeatherOptions
+  ): Promise<CurrentWeather | OpenMeteoCurrentWeatherRaw> {
+    // Skip caching for raw requests
+    if (options?.raw) {
+      return this.executeWithFallback(
+        (provider) => provider.getCurrentWeatherByCity(city, options),
+        "getCurrentWeather"
+      );
+    }
+
     const cacheKey = Cache.createKey(
       this.primaryProviderType,
       "current",
@@ -249,7 +264,7 @@ export class LotusWeather {
 
     // Fetch from provider
     const result = await this.executeWithFallback(
-      (provider) => provider.getCurrentWeatherByCity(city),
+      (provider) => provider.getCurrentWeatherByCity(city, options),
       "getCurrentWeather"
     );
 
@@ -264,17 +279,26 @@ export class LotusWeather {
   /**
    * Fetches current weather data for geographic coordinates.
    * @param coords - Object with lat and lon properties
-   * @returns Promise resolving to weather data
+   * @param options - Optional settings (set raw: true for direct API response)
+   * @returns Promise resolving to weather data or raw API response
    * @throws WeatherError if the request fails
    */
-  async getWeatherByCoords(coords: {
-    lat: number;
-    lon: number;
-  }): Promise<CurrentWeather> {
+  async getWeatherByCoords(
+    coords: { lat: number; lon: number },
+    options?: CurrentWeatherOptions
+  ): Promise<CurrentWeather | OpenMeteoCurrentWeatherRaw> {
     const normalizedCoords: Coordinates = {
       latitude: coords.lat,
       longitude: coords.lon,
     };
+
+    // Skip caching for raw requests
+    if (options?.raw) {
+      return this.executeWithFallback(
+        (provider) => provider.getCurrentWeatherByCoords(normalizedCoords, options),
+        "getWeatherByCoords"
+      );
+    }
 
     const cacheKey = Cache.createKey(
       this.primaryProviderType,
@@ -292,7 +316,7 @@ export class LotusWeather {
 
     // Fetch from provider
     const result = await this.executeWithFallback(
-      (provider) => provider.getCurrentWeatherByCoords(normalizedCoords),
+      (provider) => provider.getCurrentWeatherByCoords(normalizedCoords, options),
       "getWeatherByCoords"
     );
 
