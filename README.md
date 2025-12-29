@@ -27,10 +27,25 @@ import { LotusWeather } from "lotus-weather";
 // Using Open-Meteo (free, no API key required)
 const weather = new LotusWeather({ provider: "open-meteo" });
 
-// Get current weather
+// Get current weather (opinionated, structured response)
 const current = await weather.getCurrentWeather("London");
 console.log(current);
-// { city: "London", temperature: 15, description: "Partly cloudy" }
+// {
+//   city: "London",
+//   temperature: 15,
+//   description: "Partly cloudy",
+//   windSpeed: 12.5,
+//   windDirection: 180,
+//   isDay: true,
+//   timezone: "GMT",
+//   elevation: 25,
+//   time: "2025-01-15T14:30",
+//   units: { temperature: "°C", windSpeed: "km/h", windDirection: "°" }
+// }
+
+// Get raw API response (for advanced use cases)
+const raw = await weather.getCurrentWeather("London", { raw: true });
+console.log(raw); // Direct Open-Meteo API response
 
 // Get 5-day forecast
 const forecast = await weather.getForecast("London");
@@ -103,22 +118,27 @@ new LotusWeather(config: LotusWeatherConfig)
 
 #### Methods
 
-##### getCurrentWeather(city: string): Promise\<CurrentWeather\>
+##### getCurrentWeather(city: string, options?: CurrentWeatherOptions): Promise\<CurrentWeather | OpenMeteoCurrentWeatherRaw\>
 
 Fetches current weather data for a specified city.
 
 ```typescript
+// Get opinionated response (default)
 const current = await weather.getCurrentWeather("Paris");
-// { city: "Paris", temperature: 18, description: "Clear sky" }
+// Returns rich CurrentWeather object with all available fields
+
+// Get raw API response (Open Meteo only)
+const raw = await weather.getCurrentWeather("Paris", { raw: true });
+// Returns direct API response without transformation
 ```
 
-##### getWeatherByCoords(coords: { lat: number; lon: number }): Promise\<CurrentWeather\>
+##### getWeatherByCoords(coords: { lat: number; lon: number }, options?: CurrentWeatherOptions): Promise\<CurrentWeather | OpenMeteoCurrentWeatherRaw\>
 
 Fetches current weather data for geographic coordinates.
 
 ```typescript
 const data = await weather.getWeatherByCoords({ lat: 51.5074, lon: -0.1278 });
-// { city: "London", temperature: 15, description: "Overcast" }
+// Returns rich CurrentWeather object
 ```
 
 ##### getForecast(city: string, options?: ForecastOptions): Promise\<ForecastDay[]\>
@@ -142,22 +162,70 @@ weather.clearCache();
 
 #### CurrentWeather
 
+LotusWeather provides a rich, unified response structure with both common fields (available from all providers) and provider-specific fields.
+
 ```typescript
 interface CurrentWeather {
-  city: string;        // The city name
-  temperature: number; // Temperature in Celsius
-  description: string; // Weather description (e.g., "Clear sky")
+  // === Common fields (available from all providers) ===
+  city: string;                    // The city name or coordinates string
+  temperature: number;             // Temperature value
+  description: string;             // Human-readable weather description
+  windSpeed: number;               // Wind speed in km/h
+  windDirection: number;           // Wind direction in degrees (0-360)
+  isDay: boolean;                  // Whether it's currently daytime
+  timezone: string;                // Timezone identifier (e.g., "GMT", "UTC+2")
+  timezoneAbbreviation: string;    // Timezone abbreviation
+  time: string;                    // Timestamp (YYYY-MM-DDTHH:MM format)
+  units: CurrentWeatherUnits;      // Units for measurements
+
+  // === Open Meteo specific fields ===
+  elevation?: number;              // Elevation in meters above sea level
+
+  // === OpenWeather specific fields ===
+  feelsLike?: number;              // Feels like temperature
+  humidity?: number;               // Humidity percentage (0-100)
+  pressure?: number;               // Atmospheric pressure in hPa
+  visibility?: number;             // Visibility in meters
+  clouds?: number;                 // Cloud coverage percentage (0-100)
+  windGust?: number;               // Wind gust speed in km/h
+  sunrise?: string;                // Sunrise time (ISO format)
+  sunset?: string;                 // Sunset time (ISO format)
+  country?: string;                // Country code
+  seaLevelPressure?: number;       // Pressure at sea level in hPa
+  groundLevelPressure?: number;    // Pressure at ground level in hPa
+}
+
+interface CurrentWeatherUnits {
+  temperature: string;    // e.g., "°C"
+  windSpeed: string;      // e.g., "km/h"
+  windDirection: string;  // e.g., "°"
+  pressure?: string;      // e.g., "hPa" (OpenWeather only)
+  humidity?: string;      // e.g., "%" (OpenWeather only)
+  visibility?: string;    // e.g., "m" (OpenWeather only)
 }
 ```
 
 #### ForecastDay
 
+Forecast data includes common fields from all providers and additional aggregated data when using OpenWeather.
+
 ```typescript
 interface ForecastDay {
-  date: string;        // Date in ISO format (YYYY-MM-DD)
-  minTemp: number;     // Minimum temperature in Celsius
-  maxTemp: number;     // Maximum temperature in Celsius
-  description: string; // Weather description
+  // === Common fields (available from all providers) ===
+  date: string;             // Date in ISO format (YYYY-MM-DD)
+  minTemp: number;          // Minimum temperature in Celsius
+  maxTemp: number;          // Maximum temperature in Celsius
+  description: string;      // Most frequent weather description of the day
+
+  // === OpenWeather specific fields ===
+  avgFeelsLike?: number;    // Average feels-like temperature (°C)
+  avgHumidity?: number;     // Average humidity (%)
+  avgPressure?: number;     // Average atmospheric pressure (hPa)
+  avgWindSpeed?: number;    // Average wind speed (km/h)
+  avgClouds?: number;       // Average cloud coverage (%)
+  maxPop?: number;          // Max probability of precipitation (0-100%)
+  totalRain?: number;       // Total rain accumulation (mm)
+  totalSnow?: number;       // Total snow accumulation (mm)
 }
 ```
 
@@ -176,6 +244,14 @@ interface LotusWeatherConfig {
       geocoding?: number; // TTL for geocoding (default: 24 hours)
     };
   };
+}
+```
+
+#### CurrentWeatherOptions
+
+```typescript
+interface CurrentWeatherOptions {
+  raw?: boolean;  // When true, returns raw API response (Open Meteo only)
 }
 ```
 
@@ -198,6 +274,31 @@ class WeatherError extends Error {
   cause?: Error;  // Original error if available
 }
 ```
+
+## Raw API Response
+
+For advanced use cases where you need the exact API response from Open-Meteo, use the `raw` option:
+
+```typescript
+const weather = new LotusWeather({ provider: "open-meteo" });
+
+// Get raw Open-Meteo API response
+const raw = await weather.getCurrentWeather("London", { raw: true });
+console.log(raw);
+// {
+//   latitude: 51.5,
+//   longitude: -0.12,
+//   generationtime_ms: 0.1,
+//   utc_offset_seconds: 0,
+//   timezone: "GMT",
+//   timezone_abbreviation: "GMT",
+//   elevation: 25.0,
+//   current_weather_units: { ... },
+//   current_weather: { ... }
+// }
+```
+
+**Note:** Raw mode is only supported for the Open-Meteo provider. Using `raw: true` with OpenWeather will throw an error.
 
 ## Caching
 
